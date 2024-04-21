@@ -7,7 +7,7 @@ import urllib.request
 
 # Define a function to download the model from a GitHub repository
 def download_model():
-    model_url = "https://github.com/jfzhang95/pytorch-deeplab-xception/releases/download/v1.0/deeplabv3_resnet101_coco-586e9e4e.pth"
+    model_url = "https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth"
     model_path = "deeplabv3_resnet101_coco.pth"
     urllib.request.urlretrieve(model_url, model_path)
     return model_path
