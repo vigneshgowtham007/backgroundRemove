@@ -3,9 +3,21 @@ import torchvision.transforms as transforms
 from PIL import Image
 import numpy as np
 import streamlit as st
+import urllib.request
+
+# Define a function to download the model from a GitHub repository
+def download_model():
+    model_url = "https://github.com/jfzhang95/pytorch-deeplab-xception/releases/download/v1.0/deeplabv3_resnet101_coco-586e9e4e.pth"
+    model_path = "deeplabv3_resnet101_coco.pth"
+    urllib.request.urlretrieve(model_url, model_path)
+    return model_path
+
+# Download the model
+model_path = download_model()
 
 # Load pre-trained DeepLabV3 model
-model = torch.hub.load('pytorch/vision:v0.9.0', 'deeplabv3_resnet101', pretrained=True)
+model = torch.hub.load('pytorch/vision:v0.9.0', 'deeplabv3_resnet101', pretrained=False)
+model.load_state_dict(torch.load(model_path))
 model.eval()
 
 # Define a function to perform background removal
