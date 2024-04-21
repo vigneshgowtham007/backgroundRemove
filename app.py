@@ -1,41 +1,52 @@
-import cv2
+import torch
+import torchvision.transforms as transforms
+from PIL import Image
 import numpy as np
 import streamlit as st
-from tensorflow.keras.models import load_model
 
-# Load pre-trained deep learning model for background removal
-model = load_model("path_to_your_pretrained_model.h5")  # Replace with the path to your model file
+# Load pre-trained DeepLabV3 model
+model = torch.hub.load('pytorch/vision:v0.9.0', 'deeplabv3_resnet101', pretrained=True)
+model.eval()
 
+# Define a function to perform background removal
 def remove_background(image):
-    # Resize image to fit the input size of the model
-    image_resized = cv2.resize(image, (224, 224))
+    # Apply transformations to the image
+    preprocess = transforms.Compose([
+        transforms.Resize((512, 512)),  # Resize image to match model input size
+        transforms.ToTensor(),           # Convert PIL image to PyTorch tensor
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize image
+    ])
+    input_tensor = preprocess(image).unsqueeze(0)  # Add batch dimension
 
-    # Normalize pixel values to range [0, 1]
-    image_normalized = image_resized / 255.0
+    # Perform inference
+    with torch.no_grad():
+        output = model(input_tensor)['out'][0]
+    output_predictions = output.argmax(0)
 
-    # Predict the mask for the image
-    mask = model.predict(np.expand_dims(image_normalized, axis=0))[0]
+    # Create a mask where background is black and foreground is white
+    background_mask = output_predictions != 0  # Background class index is 0
+    background_mask = background_mask.cpu().numpy().astype(np.uint8) * 255  # Convert mask to 0s and 255s
 
     # Apply the mask to the original image
-    masked_image = image * mask[:, :, np.newaxis]
+    background_removed_image = np.array(image) * (1 - background_mask[:, :, np.newaxis] / 255)
 
-    return masked_image
+    return background_removed_image
 
+# Main function for Streamlit app
 def main():
     st.title("Image Background Removal")
 
     uploaded_image = st.file_uploader("Choose an image file", type=['jpg', 'jpeg', 'png'])
 
     if uploaded_image is not None:
-        # Read image file
-        image_bytes = uploaded_image.read()
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # Read and preprocess image
+        image = Image.open(uploaded_image)
 
-        # Process the image
-        processed_image = remove_background(image)
+        # Remove background
+        background_removed_image = remove_background(image)
 
-        st.image(processed_image, channels="BGR", caption="Processed Image")
+        # Display processed image
+        st.image(background_removed_image, caption="Processed Image", channels="RGB")
 
 if __name__ == "__main__":
     main()
