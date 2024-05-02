@@ -44,11 +44,16 @@ def main():
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
-        # Remove background
-        result = remove_background(image, model)
+        if st.button('Remove Background'):
+            # Ensure model is loaded before removing background
+            if model is not None:
+                # Remove background
+                result = remove_background(image, model)
 
-        # Display background-removed image
-        st.image(result, caption="Background Removed", use_column_width=True)
+                # Display background-removed image
+                st.image(result, caption="Background Removed", use_column_width=True)
+            else:
+                st.error("Please load the model first!")
 
 if __name__ == "__main__":
     # Load your PyTorch model here
