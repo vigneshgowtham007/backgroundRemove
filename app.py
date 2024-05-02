@@ -2,9 +2,14 @@ import streamlit as st
 from PIL import Image
 import torch
 import torchvision.transforms as transforms
+import torchvision.transforms.functional as TF
+import numpy as np
 
 # Function to remove background using PyTorch model
 def remove_background(image):
+    # Ensure image has 3 channels (RGB)
+    image = image.convert("RGB")
+    
     # Preprocess the image
     preprocess = transforms.Compose([
         transforms.Resize((256, 256)),
@@ -17,14 +22,17 @@ def remove_background(image):
     # Run inference on the model
     with torch.no_grad():
         output = model(input_batch)['out'][0]
-    
-    # Post-process the output to get binary mask
-    mask = (output.argmax(0) == 1).float()
-    
-    # Apply mask to original image
-    result = image * mask.unsqueeze(2)
 
-    return result
+    # Convert output to binary mask
+    mask = (output.argmax(0) == 1).float()
+
+    # Resize mask to match original image size
+    mask = TF.resize(mask, image.size, interpolation=Image.NEAREST)
+
+    # Apply mask to original image
+    result = np.array(image) * mask.unsqueeze(2)
+
+    return Image.fromarray(result.astype(np.uint8))
 
 # Main function to run the Streamlit app
 def main():
@@ -43,4 +51,7 @@ def main():
         st.image(result, caption="Background Removed", use_column_width=True)
 
 if __name__ == "__main__":
+    # Load your PyTorch model here
+    # model = load_model()
+    st.set_option('deprecation.showfileUploaderEncoding', False)  # This line avoids a warning message
     main()
