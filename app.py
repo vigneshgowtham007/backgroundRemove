@@ -6,7 +6,7 @@ import torchvision.transforms.functional as TF
 import numpy as np
 
 # Function to remove background using PyTorch model
-def remove_background(image):
+def remove_background(image, model):
     # Ensure image has 3 channels (RGB)
     image = image.convert("RGB")
     
@@ -45,13 +45,14 @@ def main():
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
         # Remove background
-        result = remove_background(image)
+        result = remove_background(image, model)
 
         # Display background-removed image
         st.image(result, caption="Background Removed", use_column_width=True)
 
 if __name__ == "__main__":
     # Load your PyTorch model here
-    # model = load_model()
+    # Example: model = torch.load("path_to_your_model.pth")
+    model = None  # Placeholder for your model
     st.set_option('deprecation.showfileUploaderEncoding', False)  # This line avoids a warning message
     main()
